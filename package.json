@@ -2,11 +2,6 @@
   "name": "react-good-dropdown",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2",
-    "react-scripts": "1.1.4"
-  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -14,7 +9,14 @@
     "eject": "react-scripts eject",
     "storybook": "start-storybook -p 9009 -s public",
     "story": "npm run storybook",
+    "prettier:base": "prettier \"src/**/*.js\" \"test/**/*.js\" \"stories/**/*.js\" --parser=flow",
+    "prettier": "npm run prettier:base -- --write",
     "build-storybook": "build-storybook -s public"
+  },
+  "dependencies": {
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-scripts": "1.1.4"
   },
   "devDependencies": {
     "@helpscout/fancy": "2.0.5",
