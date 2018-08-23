@@ -1,0 +1,18 @@
+Menu
+  onOpen
+      1. fast inject (mount) menu into DOM, without affecting layout
+      2. getBoundingClientRect of Menu
+    hasTrigger?
+      yes
+        1. getBoundingClientRect of Trigger
+        2. calculate optimal Menu render coordinates
+      no
+        1. use default render coordinates
+    shouldScroll?
+      determine if height should be adjusted based on Menu height + render position
+        yes
+          adjust Menu height attribute
+        no
+          leave Menu height aloone
+    render
+      visibly render and position Menu into the DOM
