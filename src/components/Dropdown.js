@@ -299,8 +299,6 @@ class Dropdown extends Component {
       const isActive = path === activeItem
       const isHover = this.isHoverMatch(path)
 
-      let canShowSubMenu = !!item.items && isHover
-
       const itemMarkup = (
         <ItemUI
           role="menu-item"
@@ -320,20 +318,18 @@ class Dropdown extends Component {
         </ItemUI>
       )
 
-      return (
+      return item.items ? (
         <Drop
           key={id}
           show={isHover}
           placement='right-start'
           trigger={itemMarkup}
         >
-          {canShowSubMenu && (
-            <MenuUI className="is-subMenu" role="menu" aria-label={item.title}>
-              {this.renderItems(item.items, path)}
-            </MenuUI>
-          )}
+          <MenuUI className="is-subMenu" role="menu" aria-label={item.title}>
+            {this.renderItems(item.items, path)}
+          </MenuUI>
         </Drop>
-      )
+      ) : itemMarkup
     })
   }
 
