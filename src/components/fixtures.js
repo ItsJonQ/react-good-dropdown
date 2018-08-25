@@ -15,7 +15,18 @@ export const items = [
         title: 'C'
       },
       {
-        title: 'D'
+        title: 'D',
+        items: [
+          {
+            title: 'A'
+          },
+          {
+            title: 'B'
+          },
+          {
+            title: 'C'
+          },
+        ]
       },
       {
         title: 'E'

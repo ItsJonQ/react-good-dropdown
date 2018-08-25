@@ -29,33 +29,54 @@ class VirtualReference {
 
 class Drop extends Component {
   static defaultProps = {
-    placement: 'right'
-  }
-
-  // static getDerivedStateFromProps(props, state) {
-  //   return {
-  //     show: props.show
-  //   }
-  // }
-
-  state = {
+    placement: 'right',
+    onShow: () => {},
+    onHide: () => {},
     show: false
   }
+
   triggerNode = false
   _isMounted = false
+
+  constructor(props) {
+    super(props)
+    this.state = {
+      show: props.show
+    }
+  }
 
   componentDidMount() {
     this._isMounted = true
     window.addEventListener('keydown', this.handleOnKeyDown)
+    this.broadcastShow()
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.show !== this.props.show) {
+      this.safeSetState({
+        show: this.props.show
+      })
+    }
+    if (prevState.show !== this.state.show) {
+      this.broadcastShow()
+    }
+  }
+
+  broadcastShow = () => {
+    if (this.state.show) {
+      this.props.onShow()
+    } else {
+      this.props.onHide()
+    }
   }
 
   componentWillUnmount() {
     this._isMounted = false
   }
 
-  safeSetState = (newState) => {
+  safeSetState = (newState, callback = () => {}) => {
     if (this._isMounted) {
-      this.setState(newState)
+      this.setState(newState, callback)
     }
   }
 
