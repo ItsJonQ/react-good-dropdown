@@ -29,25 +29,40 @@ const initialState = {
   interactionType: null,
   movementType: null,
   show: false,
+  subMenus: []
 }
 
 class Dropdown extends Component {
   static defaultProps = {
-    __debug: true,
+    __debug: false,
+    closeOnSelect: true,
     items: fixtureItems,
   }
   hoverTimeoutDuration: 200
   menuNode = null
   _isMounted = false
 
+  state = {
+    ...initialState,
+    hoverItem: GoodDropdown.hoverIndexStart,
+    items: [],
+    internalMap: [],
+    subMenus: []
+  }
+
+  static getDerivedStateFromProps(props, state) {
+    if (props.items !== state.items) {
+      return {
+        ...state,
+        items: props.items,
+        internalMap: remapItemsToInternalMap(props.items),
+      }
+    }
+    return null
+  }
+
   constructor(props) {
     super(props)
-    this.state = {
-      ...initialState,
-      items: props.items,
-      internalMap: remapItemsToInternalMap(props.items),
-      hoverItem: GoodDropdown.hoverIndexStart,
-    }
     this.hoverTimeout = null
     this.canMouseEnter = true
   }
@@ -67,6 +82,7 @@ class Dropdown extends Component {
     if (this._isMounted) {
       const __state = {...this.state}
       this.setState(state => {
+        console.log(this.stateReducer(state, action))
         return this.stateReducer(state, action)
       }, () => {
         if (this.props.__debug) {
@@ -83,12 +99,19 @@ class Dropdown extends Component {
     const items = this.state.internalMap
     const path = this.state.hoverItem
     const item = this.getHoverItem(path)
+    let nextState
 
     const getNextKeydownState = (direction: GoodDropdown.movementType.down) => {
+      const { hoverItem } = this.getNextHoverState(direction)
+      const subMenus = this.getPathList(hoverItem)
+
+      subMenus.pop()
+
       return {
-        ...this.getNextHoverState(direction),
+        hoverItem,
         interactionType: GoodDropdown.interactionType.keyDown,
-        movementType: direction
+        movementType: direction,
+        subMenus
       }
     }
 
@@ -110,18 +133,25 @@ class Dropdown extends Component {
           }
         }
       case GoodDropdown.movementType.left:
+        nextState = getNextKeydownState(GoodDropdown.movementType.left)
+        let nextSubMenus = nextState.subMenus
+
         return {
-          ...getNextKeydownState(GoodDropdown.movementType.left),
+          ...nextState,
+          subMenus: nextSubMenus
         }
       case GoodDropdown.movementType.right:
+        nextState = getNextKeydownState(GoodDropdown.movementType.right)
         return {
-          ...getNextKeydownState(GoodDropdown.movementType.right),
+          ...nextState,
+          subMenus: this.getPathList(nextState.hoverItem)
         }
       case GoodDropdown.movementType.hover:
         return {
           hoverItem: action.payload.hoverItem,
           interactionType: GoodDropdown.interactionType.mouse,
-          movementType: null
+          movementType: null,
+          subMenus: action.payload.subMenus
         }
       default:
         return {
@@ -255,7 +285,8 @@ class Dropdown extends Component {
     this.setStateWithReducer({
       type: GoodDropdown.movementType.hover,
       payload: {
-        hoverItem: path
+        hoverItem: path,
+        subMenus: this.getPathList(path)
       }
     })
   }
@@ -267,6 +298,10 @@ class Dropdown extends Component {
       activeItem: path,
       hoverItem: path,
     })
+
+    if (this.props.closeOnSelect) {
+      this.totalReset()
+    }
   }
 
   toggleDropdown = () => {
@@ -275,29 +310,39 @@ class Dropdown extends Component {
     })
   }
 
-  isHoverMatch = (path) => {
+  isHoverMatch = (path, pathList = this.getPathList()) => {
     const { hoverItem } = this.state
+
+    const matches = pathList
+      .map(p => p === path)
+      .filter(match => !!match)
+
+    return !!matches.length
+  }
+
+  getPathList = (hoverItem = this.state.hoverItem) => {
     let paths = hoverItem.split('.')
     let matchIndex = 1
 
-    const matches = paths.map(p => {
-      const matchPaths = paths.slice(0, matchIndex).join('.')
+    const pathList = paths.map(p => {
+      const path = paths.slice(0, matchIndex).join('.')
       matchIndex = matchIndex + 1
 
-      return matchPaths === path
-    }).filter(match => !!match)
+      return path
+    })
 
-    return path === hoverItem || !!matches.length
+    return pathList
   }
 
   renderItems = (items = this.state.items) => {
-    const { activeItem, hoverItem, interactionType, movementType } = this.state
+    const { activeItem, hoverItem, interactionType, movementType, subMenus } = this.state
 
     return items.map(item => {
       const data = this.state.internalMap.find(i => i.ref === item)
       const { id, index, path, title } = data
       const isActive = path === activeItem
       const isHover = this.isHoverMatch(path)
+      const isSubMenuHover = this.isHoverMatch(path, subMenus)
 
       const itemMarkup = (
         <ItemUI
@@ -321,7 +366,7 @@ class Dropdown extends Component {
       return item.items ? (
         <Drop
           key={id}
-          show={isHover}
+          show={isSubMenuHover}
           placement='right-start'
           trigger={itemMarkup}
         >
@@ -428,6 +473,7 @@ class Dropdown extends Component {
     this.setState({
       show: true
     })
+    this.blockMouseHover()
   }
 
   totalReset = () => {
@@ -471,9 +517,7 @@ function remapItemsToInternalMap(items, base, _collection = []) {
         ref: item,
         path,
         index,
-        isHover: false,
-        isFocus: false,
-        isActive: false,
+        hasMenu: !!item.items,
       })
     )
 

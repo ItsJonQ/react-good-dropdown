@@ -12,7 +12,3 @@ stories.add('Default', () => (
     <Dropdown />
   </div>
 ))
-
-stories.add('Drop', () => (
-  <Drop />
-))
